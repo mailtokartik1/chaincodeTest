@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/hyperledger/fabric-chaincode-go/pkg/cid"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 )
@@ -34,15 +33,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
 	fmt.Println("SampleChainCode Init")
 
-	//
-	// Demonstrate the use of Attribute-Based Access Control (ABAC) by checking
-	// to see if the caller has the "abac.init" attribute with a value of true;
-	// if not, return an error.
-	//
-	err := cid.AssertAttributeValue(stub, "sampleChainCode.init", "true")
-	if err != nil {
-		return shim.Error(err.Error())
-	}
+	var err error
 
 	_, args := stub.GetFunctionAndParameters()
 	var local string // Entities
