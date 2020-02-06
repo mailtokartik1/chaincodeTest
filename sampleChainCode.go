@@ -122,7 +122,7 @@ func (t *SimpleChaincode) putMultiple(stub shim.ChaincodeStubInterface, args []s
 		}
 	}
 
-	fmt.Println("State put %d times", times)
+	fmt.Printf("State put %d times\n", times)
 
 	return shim.Success(nil)
 }
