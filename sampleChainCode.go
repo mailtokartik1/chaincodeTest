@@ -21,7 +21,7 @@ import (
 	"strconv"
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
-	pb "github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric-protos-go/peer"
 )
 
 // SimpleChaincode example simple Chaincode implementation
@@ -29,7 +29,7 @@ type SimpleChaincode struct {
 }
 
 // Init initializes the chaincode
-func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
+func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) peer.Response {
 
 	fmt.Println("SampleChainCode Init")
 
@@ -61,7 +61,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
+func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
 	fmt.Println("Chaincode invoked")
 	function, args := stub.GetFunctionAndParameters()
 
@@ -72,6 +72,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return t.query(stub, args)
 	case "putMultiple":
 		return t.putMultiple(stub, args)
+	case "update":
+		return t.putMultiple(stub, args)
 	default:
 		return shim.Error(fmt.Sprintf("Invalid Smart Contract function : %s", function))
 	}
@@ -80,7 +82,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 }
 
 // Deletes an entity from state
-func (t *SimpleChaincode) delete(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) delete(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	if len(args) != 1 {
 		return shim.Error("Incorrect number of arguments. Expecting 1")
 	}
@@ -99,7 +101,7 @@ func (t *SimpleChaincode) delete(stub shim.ChaincodeStubInterface, args []string
 }
 
 // Puts an entry into the state specified number of times
-func (t *SimpleChaincode) putMultiple(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) putMultiple(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	if len(args) != 3 {
 		return shim.Error("Incorrect number of arguments. Expecting 3")
 	}
@@ -128,7 +130,7 @@ func (t *SimpleChaincode) putMultiple(stub shim.ChaincodeStubInterface, args []s
 }
 
 // query callback representing the query of a chaincode
-func (t *SimpleChaincode) query(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SimpleChaincode) query(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	var local string // Entities
 	var err error
 
@@ -139,20 +141,63 @@ func (t *SimpleChaincode) query(stub shim.ChaincodeStubInterface, args []string)
 	local = args[0]
 
 	// Get the state from the ledger
-	Avalbytes, err := stub.GetState(local)
+	localValbytes, err := stub.GetState(local)
 	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for " + local + "\"}"
 		return shim.Error(jsonResp)
 	}
 
-	if Avalbytes == nil {
+	if localValbytes == nil {
 		jsonResp := "{\"Error\":\"Nil amount for " + local + "\"}"
 		return shim.Error(jsonResp)
 	}
 
-	jsonResp := "{\"Name\":\"" + local + "\",\"Amount\":\"" + string(Avalbytes) + "\"}"
+	jsonResp := "{\"Name\":\"" + local + "\",\"Amount\":\"" + string(localValbytes) + "\"}"
 	fmt.Printf("Query Response:%s\n", jsonResp)
-	return shim.Success(Avalbytes)
+	return shim.Success(localValbytes)
+}
+
+// update an entry in state
+func (t *SimpleChaincode) update(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+	var local string         // Entities
+	var localVal, newVal int // Asset Holdings
+	var err error
+
+	if len(args) != 2 {
+		return shim.Error("Incorrect number of arguments. Expecting 2")
+	}
+
+	local = args[0]
+
+	// Get the state from the ledger
+	localValbytes, err := stub.GetState(local)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get state for " + local + "\"}"
+		return shim.Error(jsonResp)
+	}
+
+	if localValbytes == nil {
+		jsonResp := "{\"Error\":\"Nil amount for " + local + "\"}"
+		return shim.Error(jsonResp)
+	}
+
+	localVal, _ = strconv.Atoi(string(localValbytes))
+
+	// Perform the execution
+	newVal, err = strconv.Atoi(args[1])
+	if err != nil {
+		return shim.Error("Invalid transaction amount, expecting a integer value")
+	}
+
+	// Write the state back to the ledger
+	err = stub.PutState(local, []byte(strconv.Itoa(newVal)))
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	fmt.Printf("Old Value: %d\nNew Value: %d\n", localVal, newVal)
+
+	return shim.Success(nil)
 }
 
 func main() {
