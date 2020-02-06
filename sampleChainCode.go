@@ -1,19 +1,3 @@
-/*
-Copyright IBM Corp. 2016 All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-		 http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package main
 
 import (
@@ -50,7 +34,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) peer.Response {
 		return shim.Error("Expecting integer value for asset holding")
 	}
 
-	fmt.Printf("localVal = %d", localVal)
+	fmt.Printf("localVal = %d\n", localVal)
 
 	// Write the state to the ledger
 	err = stub.PutState(local, []byte(strconv.Itoa(localVal)))
@@ -73,9 +57,9 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Response
 	case "putMultiple":
 		return t.putMultiple(stub, args)
 	case "update":
-		return t.putMultiple(stub, args)
+		return t.update(stub, args)
 	default:
-		return shim.Error(fmt.Sprintf("Invalid Smart Contract function : %s", function))
+		return shim.Error(fmt.Sprintf("Invalid Smart Contract function : %s\n", function))
 	}
 
 	return shim.Error("Invalid invoke function name. Expecting \"invoke\" \"delete\" \"query\" \"putMultiple\"")
@@ -159,8 +143,8 @@ func (t *SimpleChaincode) query(stub shim.ChaincodeStubInterface, args []string)
 
 // update an entry in state
 func (t *SimpleChaincode) update(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	var local string         // Entities
-	var localVal, newVal int // Asset Holdings
+	var local string // Entities
+	var newVal int   // Asset Holdings
 	var err error
 
 	if len(args) != 2 {
@@ -168,20 +152,6 @@ func (t *SimpleChaincode) update(stub shim.ChaincodeStubInterface, args []string
 	}
 
 	local = args[0]
-
-	// Get the state from the ledger
-	localValbytes, err := stub.GetState(local)
-	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get state for " + local + "\"}"
-		return shim.Error(jsonResp)
-	}
-
-	if localValbytes == nil {
-		jsonResp := "{\"Error\":\"Nil amount for " + local + "\"}"
-		return shim.Error(jsonResp)
-	}
-
-	localVal, _ = strconv.Atoi(string(localValbytes))
 
 	// Perform the execution
 	newVal, err = strconv.Atoi(args[1])
@@ -195,14 +165,20 @@ func (t *SimpleChaincode) update(stub shim.ChaincodeStubInterface, args []string
 		return shim.Error(err.Error())
 	}
 
-	fmt.Printf("Old Value: %d\nNew Value: %d\n", localVal, newVal)
+	// Get the state from the ledger
 
-	return shim.Success(nil)
+	localValbytes, err := stub.GetState(local)
+	if err != nil {
+		jsonResp := "{\"Error\":\"Failed to get state for " + local + "\"}"
+		return shim.Error(jsonResp)
+	}
+
+	return shim.Success(localValbytes)
 }
 
 func main() {
 	err := shim.Start(new(SimpleChaincode))
 	if err != nil {
-		fmt.Printf("Error starting Simple chaincode: %s", err)
+		fmt.Printf("Error starting Simple chaincode: %s\n", err)
 	}
 }
