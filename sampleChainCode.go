@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/hyperledger/fabric-chaincode-go/shim"
 )
 
 // SimpleChaincode example simple Chaincode implementation
@@ -44,9 +44,9 @@ func (t *SimpleChaincode) Invoke(stub *shim.ChaincodeStubInterface, function str
 		// Deletes an entity from its state
 		return t.delete(stub, args)
 	}
-	if function == "putState" {
+	if function == "PutState" {
 		// Deletes an entity from its state
-		return t.putState(stub, args)
+		return t.PutState(stub, args)
 	}
 
 	return nil, nil
@@ -70,7 +70,7 @@ func (t *SimpleChaincode) delete(stub *shim.ChaincodeStubInterface, args []strin
 }
 
 // Puts an entry into the state specified number of times
-func (t *SimpleChaincode) putState(stub *shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func (t *SimpleChaincode) PutState(stub *shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	if len(args) != 3 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 3")
 	}
@@ -127,7 +127,7 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStubInterface, function stri
 
 	// Get the state from the ledger
 	Avalbytes, err := stub.GetState(local)
-	if err != nil {/go
+	if err != nil {
 		jsonResp := "{\"Error\":\"Failed to get state for " + local + "\"}"
 		return nil, errors.New(jsonResp)
 	}
