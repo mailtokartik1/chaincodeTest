@@ -102,7 +102,7 @@ func (t *SimpleChaincode) putMultiple(stub shim.ChaincodeStubInterface, args []s
 	}
 
 	for i := 0; i < times; i++ {
-		err = stub.PutState(local, []byte(strconv.Itoa(localVal)))
+		err = stub.PutState(local+strconv.Itoa(i), []byte(strconv.Itoa(localVal)+strconv.Itoa(i)))
 		if err != nil {
 			return shim.Error(err.Error())
 		}
